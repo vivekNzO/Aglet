@@ -6,6 +6,7 @@ import {clerkMiddleware} from '@clerk/express'
 import {serve} from "inngest/express"
 import {functions,inngest} from "./config/innjest.js"
 import adminRoutes from './routes/admin.route.js'
+import userRoutes from './routes/user.route.js'
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get("/api/health",(req,res)=>{
 })
 
 app.use("/api/admin",adminRoutes)
+app.use("/api/users",userRoutes)
 
 // make app ready for deployment
 
