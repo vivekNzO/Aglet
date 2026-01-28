@@ -4,8 +4,9 @@ import React from 'react'
 function LoginPage() {
   return (
     <>
-    <div>LoginPage</div>
+    <div className='h-screen hero'>
       <SignIn/>
+    </div>
     </>
   )
 }
