@@ -18,6 +18,14 @@ const app = express();
 
 const __dirname = path.resolve()
 
+app.use("/api/payment",(req,res,next)=>{
+    if(req.originalUrl==="/api/payment/webhook"){
+        express.raw({type:"application/json"})(req,res,next)
+    }else{
+        express.json()(req,res,next)
+    }
+},paymentRoutes)
+
 app.use(express.json())
 
 app.use(clerkMiddleware()) //adds auth object under the req
@@ -38,7 +46,6 @@ app.use("/api/orders",orderRoutes)
 app.use("/api/reviews",reviewRoutes)
 app.use("/api/products",productRoutes)
 app.use("/api/cart",cartRoutes)
-app.use("/api/payments",paymentRoutes)
 
 // make app ready for deployment
 

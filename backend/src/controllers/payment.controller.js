@@ -2,6 +2,8 @@ import { ENV } from "../config/env.js"
 import Stripe from 'stripe'
 import { Product } from "../models/product.model.js"
 import { User } from "../models/user.model.js"
+import { err } from "inngest/types"
+import { Order } from "../models/order.model.js"
 
 
 const stripe = new Stripe(ENV.STRIPE_SECRET_KEY)
@@ -83,4 +85,58 @@ export const createPaymentIntent = async()=>{
         console.error("Error creating payment intent: ",error)
         res.status(500).json({error:"Failed to create payment intent"})
     }
+}
+
+export const handleWebhook = async(req,res)=>{
+    const sig = req.headers["stripe-signature"]
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, ENV.STRIPE_WEBHOOK_SECRET)
+    } catch (error) {
+        console.error("Webhook signature verification failed: ", error.message)
+        return res.status(400).send(`Webhook Error: ${error.message}`)
+    }
+
+    if(event.type==="payment_intent.succeeded"){
+        const paymentIntent = event.data.object;
+        console.log("Payment succeeded",paymentIntent.id)
+
+        try {
+            const {userId, clerkId, orderItems, shippingAddress, totalPrice} = paymentIntent.metadata
+
+            const existingOrder = await Order.findOne({"paymentResult.id":paymentIntent.id})
+
+            if(existingOrder){
+                console.log("Order already exists for payment: ",paymentIntent.id)
+                return res.json({received:true})
+            }
+
+            // create an order
+            const order = await Order.create({
+                user:userId,
+                clerkId,
+                orderItems:JSON.parse(orderItems),
+                shippingAddress:JSON.parse(shippingAddress),
+                paymentResult:{
+                    id:paymentIntent.id,
+                    status:"succeeded",
+                },
+                totalPrice:parseFloat(totalPrice)
+            })
+
+            //update product stock
+            const items = JSON.parse(orderItems)
+            for(const item of items){
+                await Product.findByIdAndUpdate(item.product,{
+                    $inc:{stock:-item.quantity}
+                })
+            }
+
+            console.log("Order created successfully: ", order._id)
+        } catch (error) {
+            console.error("Error creating order from webhook: ",error)
+        }
+    }
+
+    res.json({received:true})
 }

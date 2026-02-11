@@ -94,7 +94,7 @@ const CartScreen = () => {
 
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: data.clientSecret,
-        merchantDisplayName: "Your Store Name",
+        merchantDisplayName: "Aglet",
       });
 
       if (initError) {

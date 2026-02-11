@@ -5,5 +5,6 @@ import { createPaymentIntent } from "../controllers/payment.controller.js"
 const router = Router()
 
 router.post("/create-intent",protectRoute,createPaymentIntent)
+router.post("/webhook",handleWebhook)
 
 export default router
